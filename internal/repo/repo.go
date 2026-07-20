@@ -2,8 +2,10 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Gshorti/Vibe_Code_Telegram_Mini_App_GZG_Backend/internal/model"
@@ -107,14 +109,18 @@ func (r *Repo) attachOptions(ctx context.Context, questions []model.Question) er
 	return rows.Err()
 }
 
+// GetQuestionWithOptions returns nil, nil if the question does not exist.
 func (r *Repo) GetQuestionWithOptions(ctx context.Context, questionID int64) (*model.Question, error) {
 	var q model.Question
 	err := r.db.QueryRow(ctx, `
 		SELECT id, topic_id, difficulty, code_snippet, created_at
 		FROM questions WHERE id = $1
 	`, questionID).Scan(&q.ID, &q.TopicID, &q.Difficulty, &q.CodeSnippet, &q.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query question: %w", err)
 	}
 
 	questions := []model.Question{q}
