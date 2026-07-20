@@ -190,8 +190,8 @@ components:
       properties:
         id:
           type: integer
-        topic:
-          $ref: "#/components/schemas/Topic"
+        topicId:
+          type: integer
         difficulty:
           type: integer
           minimum: 1
@@ -202,7 +202,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AnswerOption"
-      required: [id, topic, difficulty, codeSnippet, options]
+      required: [id, topicId, difficulty, codeSnippet, options]
 
     AnswerRequest:
       type: object
