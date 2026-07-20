@@ -36,12 +36,13 @@ type userStatsDTO struct {
 }
 
 type historyItemDTO struct {
-	QuestionID         int64  `json:"questionId"`
-	CodeSnippet        string `json:"codeSnippet"`
-	SelectedOptionText string `json:"selectedOptionText"`
-	CorrectOptionText  string `json:"correctOptionText"`
-	Correct            bool   `json:"correct"`
-	AnsweredAt         string `json:"answeredAt"` // RFC 3339
+	QuestionID         int64             `json:"questionId"`
+	CodeSnippet        string            `json:"codeSnippet"`
+	Options            []answerOptionDTO `json:"options"`
+	SelectedOptionText string            `json:"selectedOptionText"`
+	CorrectOptionText  string            `json:"correctOptionText"`
+	Correct            bool              `json:"correct"`
+	AnsweredAt         string            `json:"answeredAt"` // RFC 3339
 }
 
 type errorDTO struct {
@@ -54,15 +55,19 @@ func toTopicDTO(t model.Topic) topicDTO {
 
 // toQuestionDTO never includes which option is correct.
 func toQuestionDTO(q model.Question) questionDTO {
-	options := make([]answerOptionDTO, 0, len(q.Options))
-	for _, o := range q.Options {
-		options = append(options, answerOptionDTO{ID: o.ID, Text: o.Text})
-	}
 	return questionDTO{
 		ID:          q.ID,
 		TopicID:     q.TopicID,
 		Difficulty:  q.Difficulty,
 		CodeSnippet: q.CodeSnippet,
-		Options:     options,
+		Options:     toAnswerOptionDTOs(q.Options),
 	}
+}
+
+func toAnswerOptionDTOs(options []model.AnswerOption) []answerOptionDTO {
+	dtos := make([]answerOptionDTO, 0, len(options))
+	for _, o := range options {
+		dtos = append(dtos, answerOptionDTO{ID: o.ID, Text: o.Text})
+	}
+	return dtos
 }

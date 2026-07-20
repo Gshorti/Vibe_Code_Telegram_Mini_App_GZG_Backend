@@ -165,13 +165,15 @@ type Stats struct {
 type HistoryItem struct {
 	QuestionID         int64
 	CodeSnippet        string
+	Options            []model.AnswerOption
 	SelectedOptionText string
 	CorrectOptionText  string
 	IsCorrect          bool
 	AnsweredAt         time.Time
 }
 
-// UserHistory returns the user's attempts, newest first.
+// UserHistory returns the user's attempts, newest first, each with the full
+// list of answer options the question had at the time.
 func (r *Repo) UserHistory(ctx context.Context, userID int64, limit, offset int) ([]HistoryItem, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT a.question_id, q.code_snippet, so.text, co.text, a.is_correct, a.created_at
@@ -196,7 +198,48 @@ func (r *Repo) UserHistory(ctx context.Context, userID int64, limit, offset int)
 		}
 		items = append(items, it)
 	}
-	return items, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if err := r.attachHistoryOptions(ctx, items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (r *Repo) attachHistoryOptions(ctx context.Context, items []HistoryItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	ids := make([]int64, len(items))
+	byQuestion := make(map[int64][]*HistoryItem, len(items))
+	for i := range items {
+		ids[i] = items[i].QuestionID
+		byQuestion[items[i].QuestionID] = append(byQuestion[items[i].QuestionID], &items[i])
+	}
+
+	rows, err := r.db.Query(ctx, `
+		SELECT id, question_id, text, is_correct
+		FROM answer_options
+		WHERE question_id = ANY($1)
+		ORDER BY id
+	`, ids)
+	if err != nil {
+		return fmt.Errorf("query history answer options: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var o model.AnswerOption
+		if err := rows.Scan(&o.ID, &o.QuestionID, &o.Text, &o.IsCorrect); err != nil {
+			return fmt.Errorf("scan history answer option: %w", err)
+		}
+		for _, it := range byQuestion[o.QuestionID] {
+			it.Options = append(it.Options, o)
+		}
+	}
+	return rows.Err()
 }
 
 func (r *Repo) UserStats(ctx context.Context, userID int64) (Stats, error) {
