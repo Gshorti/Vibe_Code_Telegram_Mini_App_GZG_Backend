@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -159,6 +160,43 @@ func (r *Repo) RecordAttempt(ctx context.Context, a model.Attempt) error {
 type Stats struct {
 	TotalAnswers   int64
 	CorrectAnswers int64
+}
+
+type HistoryItem struct {
+	QuestionID         int64
+	CodeSnippet        string
+	SelectedOptionText string
+	CorrectOptionText  string
+	IsCorrect          bool
+	AnsweredAt         time.Time
+}
+
+// UserHistory returns the user's attempts, newest first.
+func (r *Repo) UserHistory(ctx context.Context, userID int64, limit, offset int) ([]HistoryItem, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT a.question_id, q.code_snippet, so.text, co.text, a.is_correct, a.created_at
+		FROM attempts a
+		JOIN questions q ON q.id = a.question_id
+		JOIN answer_options so ON so.id = a.selected_option_id
+		JOIN answer_options co ON co.question_id = a.question_id AND co.is_correct
+		WHERE a.user_id = $1
+		ORDER BY a.created_at DESC, a.id DESC
+		LIMIT $2 OFFSET $3
+	`, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("query user history: %w", err)
+	}
+	defer rows.Close()
+
+	var items []HistoryItem
+	for rows.Next() {
+		var it HistoryItem
+		if err := rows.Scan(&it.QuestionID, &it.CodeSnippet, &it.SelectedOptionText, &it.CorrectOptionText, &it.IsCorrect, &it.AnsweredAt); err != nil {
+			return nil, fmt.Errorf("scan history item: %w", err)
+		}
+		items = append(items, it)
+	}
+	return items, rows.Err()
 }
 
 func (r *Repo) UserStats(ctx context.Context, userID int64) (Stats, error) {

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Gshorti/Vibe_Code_Telegram_Mini_App_GZG_Backend/internal/service"
 )
@@ -27,6 +28,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /questions/feed", h.requireAuth(h.feed))
 	mux.HandleFunc("POST /questions/{id}/answer", h.requireAuth(h.submitAnswer))
 	mux.HandleFunc("GET /users/me/stats", h.requireAuth(h.stats))
+	mux.HandleFunc("GET /users/me/history", h.requireAuth(h.history))
 	return loggingMiddleware(corsMiddleware(h.allowedOrigin, mux))
 }
 
@@ -149,6 +151,55 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 		CorrectAnswers: stats.CorrectAnswers,
 		Accuracy:       stats.Accuracy,
 	})
+}
+
+func (h *Handler) history(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, errMissingAuth)
+		return
+	}
+
+	q := r.URL.Query()
+
+	limit := service.DefaultFeedLimit
+	if v := q.Get("limit"); v != "" {
+		l, err := strconv.Atoi(v)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, errors.New("invalid limit"))
+			return
+		}
+		limit = l
+	}
+
+	offset := 0
+	if v := q.Get("offset"); v != "" {
+		o, err := strconv.Atoi(v)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, errors.New("invalid offset"))
+			return
+		}
+		offset = o
+	}
+
+	items, err := h.service.History(r.Context(), userID, limit, offset)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	dtos := make([]historyItemDTO, 0, len(items))
+	for _, it := range items {
+		dtos = append(dtos, historyItemDTO{
+			QuestionID:         it.QuestionID,
+			CodeSnippet:        it.CodeSnippet,
+			SelectedOptionText: it.SelectedOptionText,
+			CorrectOptionText:  it.CorrectOptionText,
+			Correct:            it.IsCorrect,
+			AnsweredAt:         it.AnsweredAt.Format(time.RFC3339),
+		})
+	}
+	writeJSON(w, http.StatusOK, dtos)
 }
 
 func writeServiceError(w http.ResponseWriter, err error) {

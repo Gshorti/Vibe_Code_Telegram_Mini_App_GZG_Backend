@@ -35,6 +35,15 @@ type userStatsDTO struct {
 	Accuracy       float64 `json:"accuracy"`
 }
 
+type historyItemDTO struct {
+	QuestionID         int64  `json:"questionId"`
+	CodeSnippet        string `json:"codeSnippet"`
+	SelectedOptionText string `json:"selectedOptionText"`
+	CorrectOptionText  string `json:"correctOptionText"`
+	Correct            bool   `json:"correct"`
+	AnsweredAt         string `json:"answeredAt"` // RFC 3339
+}
+
 type errorDTO struct {
 	Error string `json:"error"`
 }

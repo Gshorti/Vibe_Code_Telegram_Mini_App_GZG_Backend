@@ -35,6 +35,10 @@ func (f *fakeRepo) UserStats(ctx context.Context, userID int64) (repo.Stats, err
 	return repo.Stats{}, nil
 }
 
+func (f *fakeRepo) UserHistory(ctx context.Context, userID int64, limit, offset int) ([]repo.HistoryItem, error) {
+	return nil, nil
+}
+
 const testBotToken = "test-bot-token"
 
 func validInitData(t *testing.T, telegramID int64) string {

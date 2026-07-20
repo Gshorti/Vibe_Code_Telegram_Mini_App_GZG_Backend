@@ -13,6 +13,7 @@ type fakeRepo struct {
 	questions map[int64]*model.Question
 	stats     repo.Stats
 	attempts  []model.Attempt
+	history   []repo.HistoryItem
 }
 
 func (f *fakeRepo) ListTopics(ctx context.Context) ([]model.Topic, error) {
@@ -38,6 +39,10 @@ func (f *fakeRepo) RecordAttempt(ctx context.Context, a model.Attempt) error {
 
 func (f *fakeRepo) UserStats(ctx context.Context, userID int64) (repo.Stats, error) {
 	return f.stats, nil
+}
+
+func (f *fakeRepo) UserHistory(ctx context.Context, userID int64, limit, offset int) ([]repo.HistoryItem, error) {
+	return f.history, nil
 }
 
 func questionFixture() *model.Question {
@@ -139,6 +144,26 @@ func TestStats_Accuracy(t *testing.T) {
 	}
 	if stats.Accuracy != 0.75 {
 		t.Errorf("expected accuracy=0.75, got %v", stats.Accuracy)
+	}
+}
+
+func TestHistory_InvalidLimit(t *testing.T) {
+	s := New(&fakeRepo{})
+	_, err := s.History(context.Background(), 1, 1000, 0)
+	if err != ErrInvalidLimit {
+		t.Fatalf("expected ErrInvalidLimit, got %v", err)
+	}
+}
+
+func TestHistory_DefaultsApplied(t *testing.T) {
+	fr := &fakeRepo{history: []repo.HistoryItem{{QuestionID: 1, IsCorrect: true}}}
+	s := New(fr)
+	items, err := s.History(context.Background(), 1, 0, -5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 || items[0].QuestionID != 1 {
+		t.Errorf("expected one history item, got %+v", items)
 	}
 }
 
