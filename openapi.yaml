@@ -134,6 +134,38 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /users/me/history:
+    get:
+      tags: [stats]
+      summary: Answer history for the current user, newest first
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Answer history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
     telegramInitData:
@@ -219,6 +251,24 @@ components:
         correctOptionId:
           type: integer
       required: [correct, correctOptionId]
+
+    HistoryItem:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        codeSnippet:
+          type: string
+        selectedOptionText:
+          type: string
+        correctOptionText:
+          type: string
+        correct:
+          type: boolean
+        answeredAt:
+          type: string
+          format: date-time
+      required: [questionId, codeSnippet, selectedOptionText, correctOptionText, correct, answeredAt]
 
     UserStats:
       type: object

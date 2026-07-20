@@ -30,6 +30,7 @@ type Repo interface {
 	UpsertUserByTelegramID(ctx context.Context, telegramID int64) (int64, error)
 	RecordAttempt(ctx context.Context, a model.Attempt) error
 	UserStats(ctx context.Context, userID int64) (repo.Stats, error)
+	UserHistory(ctx context.Context, userID int64, limit, offset int) ([]repo.HistoryItem, error)
 }
 
 type Service struct {
@@ -111,6 +112,19 @@ type Stats struct {
 	TotalAnswers   int64
 	CorrectAnswers int64
 	Accuracy       float64
+}
+
+func (s *Service) History(ctx context.Context, userID int64, limit, offset int) ([]repo.HistoryItem, error) {
+	if limit <= 0 {
+		limit = DefaultFeedLimit
+	}
+	if limit > MaxFeedLimit {
+		return nil, ErrInvalidLimit
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.repo.UserHistory(ctx, userID, limit, offset)
 }
 
 func (s *Service) Stats(ctx context.Context, userID int64) (Stats, error) {
