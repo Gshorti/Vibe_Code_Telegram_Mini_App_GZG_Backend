@@ -26,7 +26,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /questions/feed", h.requireAuth(h.feed))
 	mux.HandleFunc("POST /questions/{id}/answer", h.requireAuth(h.submitAnswer))
 	mux.HandleFunc("GET /users/me/stats", h.requireAuth(h.stats))
-	return mux
+	return loggingMiddleware(mux)
 }
 
 func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
