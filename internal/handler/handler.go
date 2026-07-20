@@ -11,12 +11,13 @@ import (
 )
 
 type Handler struct {
-	service  *service.Service
-	botToken string
+	service       *service.Service
+	botToken      string
+	allowedOrigin string
 }
 
-func New(s *service.Service, botToken string) *Handler {
-	return &Handler{service: s, botToken: botToken}
+func New(s *service.Service, botToken, allowedOrigin string) *Handler {
+	return &Handler{service: s, botToken: botToken, allowedOrigin: allowedOrigin}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -26,7 +27,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /questions/feed", h.requireAuth(h.feed))
 	mux.HandleFunc("POST /questions/{id}/answer", h.requireAuth(h.submitAnswer))
 	mux.HandleFunc("GET /users/me/stats", h.requireAuth(h.stats))
-	return loggingMiddleware(mux)
+	return loggingMiddleware(corsMiddleware(h.allowedOrigin, mux))
 }
 
 func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {

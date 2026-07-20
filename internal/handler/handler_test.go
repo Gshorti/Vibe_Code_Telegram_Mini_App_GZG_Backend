@@ -56,7 +56,7 @@ func validInitData(t *testing.T, telegramID int64) string {
 }
 
 func newTestHandler() *Handler {
-	return New(service.New(&fakeRepo{}), testBotToken)
+	return New(service.New(&fakeRepo{}), testBotToken, "*")
 }
 
 func TestHealthz(t *testing.T) {

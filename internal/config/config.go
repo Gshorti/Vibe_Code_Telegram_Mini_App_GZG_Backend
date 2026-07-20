@@ -9,6 +9,7 @@ type Config struct {
 	HTTPPort      string
 	DatabaseURL   string
 	TelegramToken string
+	AllowedOrigin string
 }
 
 func Load() (Config, error) {
@@ -16,6 +17,7 @@ func Load() (Config, error) {
 		HTTPPort:      getEnv("HTTP_PORT", "8080"),
 		DatabaseURL:   os.Getenv("DATABASE_URL"),
 		TelegramToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
+		AllowedOrigin: getEnv("ALLOWED_ORIGIN", "*"),
 	}
 
 	if cfg.DatabaseURL == "" {

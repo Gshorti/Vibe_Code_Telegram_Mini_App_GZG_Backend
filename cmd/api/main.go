@@ -32,7 +32,7 @@ func main() {
 
 	r := repo.New(pool)
 	svc := service.New(r)
-	h := handler.New(svc, cfg.TelegramToken)
+	h := handler.New(svc, cfg.TelegramToken, cfg.AllowedOrigin)
 
 	addr := ":" + cfg.HTTPPort
 	log.Printf("listening on %s", addr)
