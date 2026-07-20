@@ -193,6 +193,7 @@ func (h *Handler) history(w http.ResponseWriter, r *http.Request) {
 		dtos = append(dtos, historyItemDTO{
 			QuestionID:         it.QuestionID,
 			CodeSnippet:        it.CodeSnippet,
+			Options:            toAnswerOptionDTOs(it.Options),
 			SelectedOptionText: it.SelectedOptionText,
 			CorrectOptionText:  it.CorrectOptionText,
 			Correct:            it.IsCorrect,

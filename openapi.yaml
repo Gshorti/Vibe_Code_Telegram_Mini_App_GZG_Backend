@@ -259,6 +259,10 @@ components:
           type: integer
         codeSnippet:
           type: string
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerOption"
         selectedOptionText:
           type: string
         correctOptionText:
@@ -268,7 +272,7 @@ components:
         answeredAt:
           type: string
           format: date-time
-      required: [questionId, codeSnippet, selectedOptionText, correctOptionText, correct, answeredAt]
+      required: [questionId, codeSnippet, options, selectedOptionText, correctOptionText, correct, answeredAt]
 
     UserStats:
       type: object
